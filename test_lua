@@ -1,0 +1,6 @@
+a = function()
+  print("nice one")
+end
+
+a()
+ 
