@@ -1,3 +1,6 @@
+local panorama = require("primordial/panorama-library.248")
+local clipboard = require("primordial/clipboard lib.131")
+
 json = panorama.loadstring([[
     return {
         stringify: JSON.stringify,
