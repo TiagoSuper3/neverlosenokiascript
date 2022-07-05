@@ -2,6 +2,9 @@ local hwid_table = {
   1798389498,
 }
 
+local already_loaded
+local hardware_id
+
 local hwid_check = function()
   print("before : " .. already_loaded)
   if already_loaded ~= nil then
