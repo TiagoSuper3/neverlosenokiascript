@@ -1,3 +1,21 @@
 local hwid_table = {
-1798389498,
+  1798389498,
 }
+
+local hwid_check = function()
+  print("before : " .. already_loaded)
+  if already_loaded ~= nil then
+    return false
+  end
+  
+  hardware_id = client.random_int(100000000,2000000000)
+  
+  already_loaded = true
+  print("after : " .. already_loaded)
+
+end
+
+hwid_check()
+
+print("after func : " .. already_loaded)
+print("\n\n HWID: " .. hardware_id)
