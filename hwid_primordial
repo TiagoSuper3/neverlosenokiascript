@@ -1,5 +1,5 @@
 local hwid_table = {
-    ["example"] = {UID = 0000},
+    ["drogado1337"] = {UID = 3130},
 }
 
 -- DO NOT TOUCH BELOW THIS
