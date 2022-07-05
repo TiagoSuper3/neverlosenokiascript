@@ -1,8 +1,3 @@
-local panorama = require ("primordial/panorama-library.248")
-local clipboard = require("primordial/clipboard lib.131")
-local notifications = require("primordial/notification pop-up library.58")
-require("primordial/UI Callbacks.198")
-
 -- @region = Script Info
 
 -- Owner: TiagoSuper3/Hypertt
@@ -12,6 +7,10 @@ require("primordial/UI Callbacks.198")
 
 -- @end_region = Script Info
 
+local panorama = require ("primordial/panorama-library.248")
+local clipboard = require("primordial/clipboard lib.131")
+local notifications = require("primordial/notification pop-up library.58")
+require("primordial/UI Callbacks.198")
 
 -- @region = FFI
 
@@ -24,6 +23,7 @@ ffi.cdef[[
 -- @end_region = FFI
 
 
+
 json = panorama.loadstring([[
     return {
         stringify: JSON.stringify,
@@ -31,9 +31,35 @@ json = panorama.loadstring([[
     };
 ]])()
 
+local font = {
+    tahoma14bd = render.create_font("Tahoma", 14, 600, e_font_flags.DROPSHADOW),
+    tahoma20b = render.create_font("Tahoma", 20, 600, e_font_flags.DROPSHADOW),
+    verdana11r = render.create_font("Verdana", 11, 600, e_font_flags.ANTIALIAS),
+    verdana12 = render.create_font("Verdana", 12, 600),
+    verdana13r = render.create_font("Verdana", 13, 600, e_font_flags.ANTIALIAS),
+    verdana25 = render.create_font("Verdana", 25, 600),
+    verdana40r = render.create_font("Verdana", 11, 600, e_font_flags.ANTIALIAS),
+    calibribold10 = render.create_font("Calibri Bold", 10, 600),
+    calibri26 = render.create_font("Calibri", 26, 600),
+    calibri38 = render.create_font("Calibri", 38, 600),
+    calibri48 = render.create_font("Calibri", 48, 600),
+}
 
 
-notifications:add_notification("Valency Anti-Aim", "Welcome Back "..user.name.."!", 4)
+local player_name = {
+    steam = panorama.open().MyPersonaAPI.GetName(),
+    cheat = user.name,
+    uid = user.uid,
+}
+
+local engine_client = {
+    screen_size = render.get_screen_size(),
+    screen_center = vec2_t(render.get_screen_size().x / 2, render.get_screen_size().y / 2)
+}
+
+
+
+notifications:add_notification("Valency Anti-Aim", "Welcome Back "..player_name.cheat.."!", 4)
 
 
 
@@ -96,7 +122,7 @@ menu.set_group_column("Config", 2)
 
 -- @end_region = Tab Alignment 
 
-local text = menu.add_text("Info", "Welcome back "..user.name.."!\n")
+local text = menu.add_text("Info", "Welcome back "..player_name.cheat.."!\n")
 local text3 = menu.add_text("Info", "This Source Was Made By hypertt#6635, Enter My Discord Server And Open Ticket If You Need Any Help.")
 local discordserver = menu.add_button("Info", "Discord Server", function()
     panorama.open().SteamOverlayAPI.OpenExternalBrowserURL("https://discord.gg/He39nZg3mE")
@@ -113,13 +139,15 @@ local references = {
     desync_side = menu.find("antiaim", "main", "desync", "side"),
     yaw_add = menu.find("antiaim", "main", "angles", "yaw add"),
     l_limit = menu.find("antiaim", "main", "desync", "left amount"),
-    r_limit = menu.find("antiaim", "main", "desync", "right amount") ,
+    r_limit = menu.find("antiaim", "main", "desync", "right amount"),
     jitter_mode = menu.find("antiaim", "main", "angles", "jitter mode"),
     slowwalk_key = menu.find("misc", "main", "movement", "slow walk")[2],
-    doubletap = menu.find("aimbot", "general", "exploits", "doubletap", "enable"),
+    doubletap = menu.find("aimbot", "general", "exploits", "doubletap")[1],
+    hideshots = menu.find("aimbot", "general", "exploits", "hideshots")[1],
+    fl_limit = menu.find("antiaim", "main", "fakelag", "amount"),
+    breaklagcomp = menu.find("antiaim", "main", "fakelag", "break lag compensation"),
 }
 --
-
 
 -- @region = Anti Aim Builder 
 
@@ -148,7 +176,7 @@ local references = {
 
     local jitter = 0
 
-    hook_aa.new_condition = function(lp, cmd)
+    hook_aa.new_condition = function(lp)
         -- stateids
 
         local velocity = lp:get_prop("m_vecVelocity"):length()
@@ -159,16 +187,16 @@ local references = {
             return 4  -- air
         elseif aa[5].Override:get() and lp:get_prop("m_flDuckAmount") > 0.8 then
             return 6 --crouch
-        elseif aa[2].Override:get() and velocity > 2 then
+        elseif aa[2].Override:get() and velocity ~= 0 then
             return 3 -- move
-        elseif aa[1].Override:get() and velocity < 2 then  
+        elseif aa[1].Override:get() and velocity == 0 then  
             return 2 -- stand
         else
             return 1 -- shared
         end
     end
 
-    hook_aa.apply_condition = function(cmd)
+    hook_aa.apply_condition = function()
 
         if not antiaims:get() then
             return
@@ -180,24 +208,32 @@ local references = {
             return 
         end
 
-        local stateid = hook_aa.new_condition(localplayer, cmd)
+        local stateid = hook_aa.new_condition(localplayer)
+
+        local tickcount = global_vars.tick_count() % 4 > 1
+        local inverted = antiaim.get_desync_side()
 
         references.jitter_mode:set(2)
 
-        local tickcount = global_vars.tick_count() % 4 > 1
 
-        if tickcount then 
+        if inverted == 2 then 
             references.jitter_add:set(aa[stateid].slider:get())
             references.yaw_add:set(aa[stateid].yaw_add_l:get())
 
             references.l_limit:set(aa[stateid].desync_l:get())
             references.r_limit:set(aa[stateid].desync_r:get())
-        else
+        elseif inverted == 1 then
             references.jitter_add:set(aa[stateid].slider:get())
             references.yaw_add:set(aa[stateid].yaw_add_r:get())
 
             references.l_limit:set(aa[stateid].desync_l:get())
             references.r_limit:set(aa[stateid].desync_r:get())
+        else
+            references.jitter_add:set(aa[1].slider:get())
+            references.yaw_add:set(aa[1].yaw_add_r:get())
+
+            references.l_limit:set(aa[1].desync_l:get())
+            references.r_limit:set(aa[1].desync_r:get())
         end
     end
 
@@ -209,69 +245,53 @@ local references = {
     local auto_teleport = {}
 
     airtp_bool = menu.add_checkbox("Anti-Aim Features", "Auto Teleport In Air", false)
-    airtp_mcombo = menu.add_multi_selection("Anti-Aim Features", "Teleport Weapons", {"Scout", "AWP", "Pistols", "Zeus", "Knife", "Nades", "Other"})
 
-    auto_teleport.createmove = function()
+    local are_have_weapon = function(ent)
+        if not ent:is_alive() or not ent:get_active_weapon() then return end
+        local t_cur_wep = ent:get_active_weapon():get_class_name()
+        return t_cur_wep ~= "CKnife" and t_cur_wep ~= "CC4" and t_cur_wep ~= "CMolotovGrenade" and t_cur_wep ~= "CSmokeGrenade" and t_cur_wep ~= "CHEGrenade" and t_cur_wep ~= "CWeaponTaser"
+    end
+    
+    local are_them_visibles = function(ent)
+        local local_p = entity_list:get_local_player()
+        local generic_pos = ent:get_hitbox_pos(e_hitgroups.GENERIC)
+        local left_arm_pos = ent:get_hitbox_pos(e_hitgroups.LEFT_ARM)
+        local right_arm_pos = ent:get_hitbox_pos(e_hitgroups.RIGHT_ARM)
 
-        if not airtp_bool:get() then
-            return
-        end
-
-        if not references.doubletap:get() then
-            return
-        end
-
-        local Allow_Work = false
-        local Need_Teleport = false
-
-        local lp = entity_list.get_local_player()
-        local Weapon = lp:get_active_weapon()
-
-        if Weapon == nil then
-            return
-        end
-
-        local WeaponID = Weapon:get_weapon_data().console_name
-        
-        local IsScout = WeaponID == "weapon_ssg08"
-        local IsAWP = WeaponID == "weapon_awp"
-        local IsPistols = Weapon:IsPistol()
-        local IsZeus = WeaponID == "weapon_taser"
-        local IsKnife = Weapon:IsKnife()
-        local IsNades = Weapon:IsGrenade()
-
-        for i, Weapons in pairs({
-            IsScout,
-            IsAWP,
-            IsPistols,
-            IsZeus,
-            IsKnife,
-            IsNades,
-            not (IsScout or IsAWP or IsPistols or IsZeus or IsKnife or IsNades)
-        }) do
-            if (Tab["Anti Aim"].airtp_mcombo.var:Get(i) and Weapons) then
-                Allow_Work = true
-            end
-        end
-
-        if not Allow_Work then
-            return
-        end
-
-        for _, Enemy in pairs(GetEnemies()) do
-
-            if Enemy == nil then
-                return
-            end
-
-            if (not Enemy.dormant and CanHit(Enemy)) then
-                if not GetFlag(lp, 0) then
-                    exploits.force_uncharge()
-                end
-            end
-
+        if local_p:is_point_visible(generic_pos) or local_p:is_point_visible(left_arm_pos) or local_p:is_point_visible(right_arm_pos) then 
+            return true 
+        else 
+            return false 
         end
     end
+
+    auto_teleport.createmove = function(cmd)
+
+        if not airtp_bool:get() then 
+            return 
+        end
+
+        local lp = entity_list:get_local_player()
+
+        if lp == nil then
+            return
+        end
+
+        if lp:get_prop("m_vecVelocity[2]") == 0 then
+            return
+        end
+
+        local enemies = entity_list.get_players(true)
+        for i, v in ipairs(enemies) do
+            if are_them_visibles(v) and are_have_weapon(v) then
+                exploits.force_uncharge()
+                exploits.block_recharge()
+            else
+                exploits.allow_recharge()
+            end
+        end
+    end
+
 
 -- @end_region = Auto Teleport In Air
 
@@ -354,62 +374,65 @@ local references = {
     clantag.last_iter = -1
     clantag.string =
     {
-        "v            ",
-        "va           ",
-        "val          ",
-        "vale         ",
-        "valen        ",
-        "valenc       ",
-        "valency      ",
-        "valency.     ",
-        "valency.l    ",
-        "valency.lu   ",
-        "valency.lua  ",
-        "valency.lua   ",
-        "|valency.lua ",
-        "v|alency.lua ",
-        "va|lency.lua ",
-        "val|ency.lua ",
-        "vale|ncy.lua ",
-        "valen|cy.lua ",
-        "valenc|y.lua ",
-        "valency|.lua ",
-        "valency.|lua ",
-        "valency.l|ua ",
-        "valency.lu|a ",
-        "valency.lua| ",
-        "valency.lua| ",
-        "valency.lu|a ",
-        "valency.l|ua ",
-        "valency.|lua ",
-        "valency|.lua ",
-        "valenc|y.lua ",
-        "valen|cy.lua ",
-        "vale|ncy.lua ",
-        "val|ency.lua ",
-        "va|lency.lua ",
-        "v|alency.lua ",
-        "|valency.lua ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "valency.lua  ",
-        "alency.lua   ",
-        "lency.lua    ",
-        "ency.lua     ",
-        "ncy.lua      ",
-        "cy.lua       ",
-        "u.lua        ",
-        ".lua         ",
-        "lua          ",
-        "ua           ",
-        "a            ",
-        "             ",
+        "⌛               ",
+        "⌛               ",
+        "⌛a              ",
+        "⌛ua             ",
+        "⌛lua            ",
+        "⌛.lua           ",
+        "⌛y.lua          ",
+        "⌛cy.lua         ",
+        "⌛ncy.lua        ",
+        "⌛ency.lua       ",
+        "⌛lency.lua      ",
+        "⌛alency.lua     ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛|valency.lua   ",
+        "⌛v|alency.lua   ",
+        "⌛va|lency.lua   ",
+        "⌛val|ency.lua   ",
+        "⌛vale|ncy.lua   ",
+        "⌛valen|cy.lua   ",
+        "⌛valenc|y.lua   ",
+        "⌛valency|.lua   ",
+        "⌛valency.|lua   ",
+        "⌛valency.l|ua   ",
+        "⌛valency.lu|a   ",
+        "⌛valency.lua|   ",
+        "⌛valency.lua|   ",
+        "⌛valency.lu|a   ",
+        "⌛valency.l|ua   ",
+        "⌛valency.|lua   ",
+        "⌛valency|.lua   ",
+        "⌛valenc|y.lua   ",
+        "⌛valen|cy.lua   ",
+        "⌛vale|ncy.lua   ",
+        "⌛val|ency.lua   ",
+        "⌛va|lency.lua   ",
+        "⌛v|alency.lua   ",
+        "⌛|valency.lua   ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛valency.lua    ",
+        "⌛alency.lua     ",
+        "⌛lency.lua      ",
+        "⌛ency.lua       ",
+        "⌛ncy.lua        ",
+        "⌛cy.lua         ",
+        "⌛u.lua          ",
+        "⌛.lua           ",
+        "⌛lua            ",
+        "⌛ua             ",
+        "⌛a              ",
+        "⌛               ",
+        "⌛               ",
     }
 
     mod = function(a, b)
@@ -430,7 +453,7 @@ local references = {
         
         if engine.is_connected() then
             
-            local raw_latency = engine.get_latency(e_latency_flows.INCOMING)
+            local raw_latency = engine.get_latency()
 
             if raw_latency == nil then 
                 return
@@ -577,7 +600,7 @@ local references = {
                 menu_items["desync_r_"..state[i]..""] = aa[i].desync_r:get()
             end
 
-            menu_items["username"] = user.name
+            menu_items["username"] = player_name.cheat
 
             local jsonraw = json.stringify(menu_items)
             local cfgencoded = config.encode(jsonraw)
@@ -642,7 +665,7 @@ local on_paint = function()
 
     for i = 1, #tab_table do
 
-        if i == 3 then
+        if tab_table[i] == "Anti Aim" then
             goto skip
         end
 
@@ -662,7 +685,6 @@ local on_paint = function()
     menu_condition:set_visible(isAA)
 
     airtp_bool:set_visible(window_select:get() == 3)
-    airtp_mcombo:set_visible(window_select:get() == 3 and airtp_bool:get())
 
     for i = 1, #state do
         aa[i].Override:set_visible(isAA and currentid == i)
@@ -691,17 +713,21 @@ end
     end
 
     callback.antiaim = function(poseparam, cmd)
-        hook_aa.apply_condition(cmd)
         animation_breaker.handle(poseparam)
+    end
+
+    callback.setup_command = function(cmd)
+        auto_teleport.createmove(cmd)
     end
 
     callback.paint = function()
         on_paint()
         clantag.draw()
+        hook_aa.apply_condition()
     end
 
     callbacks.add(e_callbacks.ANTIAIM, callback.antiaim) 
     callbacks.add(e_callbacks.PAINT, callback.paint)
     callbacks.add(e_callbacks.HITSCAN, callback.hitscan)
-
+    callbacks.add(e_callbacks.SETUP_COMMAND, callback.setup_command)
 -- @end_region = Callbacks
