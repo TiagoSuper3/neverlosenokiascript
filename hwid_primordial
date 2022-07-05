@@ -1,5 +1,5 @@
 local hwid_table = {
-    ["TiagoSuper3"] = {UID = 3766},
+    ["example"] = {UID = 0000},
 }
 
 -- DO NOT TOUCH BELOW THIS
@@ -26,6 +26,11 @@ local hwid_check = function()
     local uid = user.uid
     
     if username == "TiagoSuper3" and uid == 3766 then
+    
+        print(string.format("\n\nWelcome back %s!\n" ..
+        "Your connection with the server was succeeded\n" ..
+        "Authenticated successfully.\n\n BEST LUA LEZZ GO DEBUG VERS ACTIVATED", username))
+        
         return true
     end
 
