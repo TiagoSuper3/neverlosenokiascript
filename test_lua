@@ -7,6 +7,11 @@
 
 -- @end_region = Script Info
 
+local panorama = require ("primordial/panorama-library.248")
+local clipboard = require("primordial/clipboard lib.131")
+local notifications = require("primordial/notification pop-up library.58")
+require("primordial/UI Callbacks.198")
+
 -- @region = FFI
 
 local ffi = require "ffi"
